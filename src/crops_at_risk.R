@@ -26,6 +26,10 @@ windowfun=function(r1,r2,date,w=window){
   ifelse(r1>date&r1<(date+w),1,ifelse(r2>date&r2<(date+w),1,0))
 }
 
+# windowfun_justplanting=function(r1,r2,date,w=window){
+#   ifelse(r1>date&r1<(date+w),1,0)
+# }
+
 for(i in 1:length(datecrops)){
   plantdate=raster(paste0("data/crop calendars/filled/",datecrops[i]),varname="plant")
   harvestdate=raster(paste0("data/crop calendars/filled/",datecrops[i]),varname="harvest")
@@ -34,6 +38,8 @@ for(i in 1:length(datecrops)){
   if(i>1) atrisk=stack(atrisk,atrisktemp)
   print(i)
 }
+
+# names(atrisk)=datecrops;save(atrisk,file="data/productionatrisk_justplanting.Rdat")
 
 #identify double cropping areas for barley, maize, oats, rice, sorghum, and wheat to allocate production across two growing seasons
 doubles=list(c(1,2),c(5,6),c(8,9),c(13,14),c(16,17),c(22,23))
@@ -150,6 +156,13 @@ agvalue=merge(agvalue,countrycrosswalk[,c(1,5)],by.x="Area.Code",by.y="FAOSTAT")
 agvalue=agvalue%>%select("ISO3","Value")
 colnames(agvalue)=c("iso3","valueagprod")
 
+atriskiso=c("ARM","BGD","BOL","IND","IRQ","MAR","NPL","PAK","RWA")
+
+temp=nationalprod%>%
+  filter(iso3%in%atriskiso)%>%
+  mutate(bigcrops=fractionatrisk*weights)%>%
+  arrange(iso3,desc(bigcrops))
+
 #2016 population
 pop=read.csv("data/population_2016.csv")
 pop$population=as.numeric(as.character(pop$population))
@@ -173,3 +186,4 @@ write.csv(foodatrisk,file="data/nationalfoodatrisk.csv")
 psd=read.csv("data/globalcerealstocks.csv")
 a=ggplot(psd,aes(x=Year,y=Frac_Cons*100,group=Crop,col=Crop))+theme_bw()+geom_line(lwd=1.3)
 a=a+labs(y="Stocks as Fraction of Consumption (%)")+scale_color_manual(values=c("#1a2d32","#b0ac4b","#d49228"),labels=c("Maize","Rice","Wheat"))
+
